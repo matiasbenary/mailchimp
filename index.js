@@ -94,11 +94,14 @@ app.get('/api/campaigns', validateMailchimpConfig, async (req, res) => {
       sort_dir: sortDir,
     });
 
-    if (response.body && 'campaigns' in response.body) {
-      const campaigns = response.body.campaigns;
+
+    
+    if (response && ('campaigns' in response )) {
+      const campaigns = response.campaigns;
       cache.set(cacheKey, campaigns);
       res.status(200).json(campaigns);
     } else {
+      console.log('No campaigns found in response structure');
       res.status(500).json({ error: 'Failed to fetch campaigns' });
     }
 
@@ -123,7 +126,7 @@ app.get('/api/campaigns/:campaignId', validateMailchimpConfig, async (req, res) 
     }
 
     const response = await mailchimp.campaigns.get(campaignId);
-    const campaign = response.body;
+    const campaign = response;
 
     const processedCampaign = {
       id: campaign.id,
@@ -188,8 +191,9 @@ app.get('/api/campaigns/:campaignId/content', validateMailchimpConfig, async (re
 
     const response = await mailchimp.campaigns.getContent(campaignId);
     
-    if (response.body && response.body.html) {
-      const content = response.body.html;
+    const responseData = response;
+    if (responseData && responseData.html) {
+      const content = responseData.html;
       cache.set(cacheKey, content);
       
       res.json({
@@ -237,7 +241,8 @@ app.get('/api/audience/stats', validateMailchimpConfig, async (req, res) => {
     }
 
     const response = await mailchimp.lists.getAllLists();
-    const lists = response.body.lists || [];
+    const responseData =  response;
+    const lists = responseData.lists || [];
 
     const stats = lists.map(list => ({
       id: list.id,
