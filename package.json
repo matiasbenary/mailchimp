@@ -1,0 +1,25 @@
+{
+  "name": "mailchimp-backend",
+  "version": "1.0.0",
+  "description": "Backend proxy para Mailchimp API",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js",
+    "test": "echo \"No tests specified\" && exit 0"
+  },
+  "dependencies": {
+    "@mailchimp/mailchimp_marketing": "^3.0.80",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-rate-limit": "^6.10.0",
+    "node-cache": "^5.1.2"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "keywords": ["mailchimp", "api", "backend", "proxy"],
+  "author": "Tu nombre",
+  "license": "MIT"
+}
