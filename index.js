@@ -226,6 +226,77 @@ app.get('/api/campaigns/:campaignId/content', validateMailchimpConfig, async (re
   }
 });
 
+app.get('/api/calendar/:calendarId', async (req, res) => {
+  try {
+    const { calendarId } = req.params;
+    
+    if (!calendarId) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing calendarId parameter'
+      });
+    }
+    const forwardedParams = { ...req.query, calendar_api_id: calendarId };
+    const searchParams = new URLSearchParams();
+    Object.entries(forwardedParams).forEach(([k, v]) => {
+      if (v !== undefined && v !== null) {
+
+        if (Array.isArray(v)) {
+          v.forEach(val => searchParams.append(k, String(val)));
+        } else {
+          searchParams.append(k, String(v));
+        }
+      }
+    });
+
+    const qs = searchParams.toString();
+    const cacheKey = `calendar_content_${calendarId}_${qs}`;
+    const cachedData = cache.get(cacheKey);
+    if (cachedData) {
+      return res.json({
+        success: true,
+        data: cachedData,
+        cached: true,
+        calendarId,
+        forwardedQuery: forwardedParams
+      });
+    }
+
+    const url = `https://api.lu.ma/calendar/get-items?${qs}`;
+    const r = await fetch(url);
+    if (!r.ok) {
+      return res.status(r.status).json({
+        success: false,
+        error: `Upstream calendar API error (${r.status})`
+      });
+    }
+    const data = await r.json();
+    cache.set(cacheKey, data);
+    res.json({
+      success: true,
+      data,
+      cached: false,
+      calendarId,
+      forwardedQuery: forwardedParams
+    });
+
+  } catch (error) {
+    console.error('Error getting campaign content:', error);
+    
+    if (error.status === 404) {
+      return res.status(404).json({
+        success: false,
+        error: 'Campaign not found'
+      });
+    }
+    
+    res.status(500).json({
+      success: false,
+      error: 'Error getting campaign content',
+      message: process.env.NODE_ENV === 'development' ? error.message : 'Internal server error'
+    });
+  }
+});
 
 app.get('/api/audience/stats', validateMailchimpConfig, async (req, res) => {
   try {
@@ -369,6 +440,7 @@ app.use('*', (req, res) => {
       'GET /api/campaigns',
       'GET /api/campaigns/:id',
       'GET /api/campaigns/:id/content',
+      'GET /api/calendar/:calendarId',
       'GET /api/audience/stats',
       'POST /api/newsletter/subscribe',
       'POST /api/cache/clear',
